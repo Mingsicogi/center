@@ -2,27 +2,22 @@ package my.study.center.config;
 
 
 import lombok.RequiredArgsConstructor;
-import org.springframework.context.annotation.Bean;
-import org.springframework.web.reactive.HandlerMapping;
-import org.springframework.web.reactive.handler.SimpleUrlHandlerMapping;
-import org.springframework.web.reactive.socket.WebSocketHandler;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.web.socket.WebSocketHandler;
+import org.springframework.web.socket.config.annotation.EnableWebSocket;
+import org.springframework.web.socket.config.annotation.WebSocketConfigurer;
+import org.springframework.web.socket.config.annotation.WebSocketHandlerRegistry;
 
-import java.util.HashMap;
-import java.util.Map;
-
+@Configuration
+@EnableWebSocket
 @RequiredArgsConstructor
-public class WebsocketConfiguration {
+public class WebsocketConfiguration implements WebSocketConfigurer {
+
     private final WebSocketHandler webSocketHandler;
 
-    @Bean
-    public HandlerMapping websocketHandlerMapping() {
-        Map<String, WebSocketHandler> mapper = new HashMap<>();
 
-        mapper.put("/event-emitter", webSocketHandler);
-
-        SimpleUrlHandlerMapping simpleUrlHandlerMapping = new SimpleUrlHandlerMapping();
-        simpleUrlHandlerMapping.setUrlMap(mapper);
-
-        return simpleUrlHandlerMapping;
+    @Override
+    public void registerWebSocketHandlers(WebSocketHandlerRegistry webSocketHandlerRegistry) {
+        webSocketHandlerRegistry.addHandler(webSocketHandler, "/ws/chat").setAllowedOrigins("*");
     }
 }
