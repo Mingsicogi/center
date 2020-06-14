@@ -11,34 +11,27 @@ import org.springframework.web.reactive.socket.server.support.WebSocketHandlerAd
 
 import java.util.HashMap;
 import java.util.Map;
-//import org.springframework.web.socket.WebSocketHandler;
-//import org.springframework.web.socket.config.annotation.EnableWebSocket;
-//import org.springframework.web.socket.config.annotation.WebSocketConfigurer;
-//import org.springframework.web.socket.config.annotation.WebSocketHandlerRegistry;
 
-//@Configuration
-//@EnableWebSocket
-//@RequiredArgsConstructor
-//public class WebsocketConfiguration implements WebSocketConfigurer {
-//
-//    private final WebSocketHandler webSocketHandler;
-//
-//
-//    @Override
-//    public void registerWebSocketHandlers(WebSocketHandlerRegistry webSocketHandlerRegistry) {
-//        webSocketHandlerRegistry.addHandler(webSocketHandler, "/ws/chat").setAllowedOrigins("*");
-//    }
-//}
-
-
+/**
+ * 웹소켓 서버 설정
+ *
+ * @author 전민석
+ */
 @Configuration
 @RequiredArgsConstructor
 public class WebsocketConfiguration {
 
     private final WebSocketHandler webSocketHandler;
 
+    /**
+     * websocket handler router 설정
+     *
+     * @return HandlerMapping
+     */
     @Bean
     public HandlerMapping webSocketHandlerMapping() {
+
+        // TODO 해당 부분을 dynamic하게 셋팅할 수 있어야함.
         Map<String, WebSocketHandler> map = new HashMap<>();
         map.put("/event-emitter", webSocketHandler);
 
@@ -48,6 +41,11 @@ public class WebsocketConfiguration {
         return handlerMapping;
     }
 
+    /**
+     * handler mapping 에 request를 핸들링 할 수 있도록 하는 adaptor 설정
+     *
+     * @return WebSocketHandlerAdapter
+     */
     @Bean
     public WebSocketHandlerAdapter handlerAdapter() {
         return new WebSocketHandlerAdapter();

@@ -22,24 +22,28 @@ import java.util.Random;
 @RequiredArgsConstructor
 public class ReactiveWebsocketHandler implements WebSocketHandler {
 
-
     private Flux<String> intervalFlux;
     private final ObjectMapper mapper;
     private final MessageGenerator messageGenerator;
 
     @PostConstruct
-    private void setup(){
+    private void setup() {
         intervalFlux = Flux.interval(Duration.ofSeconds(1)).map(it -> getEvent());
     }
 
     @Override
-    public Mono<Void> handle(WebSocketSession session) {
-        return session
-                .send(intervalFlux.map(session::textMessage))
-                .and(session.receive().map(WebSocketMessage::getPayloadAsText).log());
+    public Mono<Void> handle(WebSocketSession webSocketSession) {
+//        return webSocketSession
+//                .send(intervalFlux.map(webSocketSession::textMessage))
+//                .and(webSocketSession.receive().map(WebSocketMessage::getPayloadAsText).log());
+
+        Flux<String> receiveFlux = webSocketSession.receive().map(WebSocketMessage::getPayloadAsText);
+
+        return webSocketSession.send(Flux.generate(() -> webSocketSession.textMessage(webSocketSession.receive().map(WebSocketMessage::getPayloadAsText).toString())))
+                .and(receiveFlux.log());
     }
 
-    private String getEvent(){
+    private String getEvent() {
         JsonNode node = mapper.valueToTree(new Event(messageGenerator.generate(), Instant.now()));
         return node.toString();
     }
@@ -54,7 +58,7 @@ class MessageGenerator {
 
     private final Random random = new Random(messages.size());
 
-    public String generate(){
+    public String generate() {
         return messages.get(random.nextInt(messages.size()));
     }
 }
