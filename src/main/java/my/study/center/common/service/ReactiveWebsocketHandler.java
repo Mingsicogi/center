@@ -17,6 +17,7 @@ import java.time.Instant;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
+import java.util.concurrent.atomic.AtomicReference;
 
 @Component
 @RequiredArgsConstructor
@@ -25,6 +26,7 @@ public class ReactiveWebsocketHandler implements WebSocketHandler {
     private Flux<String> intervalFlux;
     private final ObjectMapper mapper;
     private final MessageGenerator messageGenerator;
+    AtomicReference<String> receiveMsg = new AtomicReference<>();
 
     @PostConstruct
     private void setup() {
@@ -37,10 +39,22 @@ public class ReactiveWebsocketHandler implements WebSocketHandler {
 //                .send(intervalFlux.map(webSocketSession::textMessage))
 //                .and(webSocketSession.receive().map(WebSocketMessage::getPayloadAsText).log());
 
-        Flux<String> receiveFlux = webSocketSession.receive().map(WebSocketMessage::getPayloadAsText);
+        return webSocketSession
+                .send(Flux.generate(() -> receiveMsg.get(), (message, sink) -> {
+                    if(message != null && message.isBlank()) {
+                        webSocketSession.textMessage(message);
+                        message = "";
+                        sink.complete();
+                    } else {
+                        sink.next(webSocketSession.pingMessage());
+                    }
 
-        return webSocketSession.send(Flux.generate(() -> webSocketSession.textMessage(webSocketSession.receive().map(WebSocketMessage::getPayloadAsText).toString())))
-                .and(receiveFlux.log());
+                    return message;
+                }))
+                .and(webSocketSession.receive().map(webSocketMessage -> {
+                    receiveMsg.set(webSocketMessage.getPayloadAsText());
+                    return Flux.just(webSocketMessage);
+                }));
     }
 
     private String getEvent() {
