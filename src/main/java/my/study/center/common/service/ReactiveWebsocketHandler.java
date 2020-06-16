@@ -1,110 +1,75 @@
 package my.study.center.common.service;
 
-import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import io.netty.util.internal.SuppressJava6Requirement;
-import lombok.Getter;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.context.annotation.Bean;
-import org.springframework.integration.channel.PublishSubscribeChannel;
-import org.springframework.integration.dsl.IntegrationFlow;
-import org.springframework.integration.dsl.IntegrationFlows;
-import org.springframework.messaging.MessageHandler;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.socket.WebSocketHandler;
 import org.springframework.web.reactive.socket.WebSocketMessage;
 import org.springframework.web.reactive.socket.WebSocketSession;
 import reactor.core.publisher.Flux;
-import reactor.core.publisher.FluxSink;
 import reactor.core.publisher.Mono;
+import reactor.core.publisher.UnicastProcessor;
 
-import javax.annotation.PostConstruct;
-import java.time.Duration;
-import java.time.Instant;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
-import java.util.Random;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.function.Consumer;
+import java.util.Optional;
 
 @Slf4j
 @Component
-@RequiredArgsConstructor
 public class ReactiveWebsocketHandler implements WebSocketHandler {
 
-    private Flux<String> intervalFlux;
-    private final ObjectMapper mapper;
-    private final MessageGenerator messageGenerator;
-    private final Map<String, MessageHandler> connections = new ConcurrentHashMap<>();
+    private static ObjectMapper objectMapper = new ObjectMapper();
+    private UnicastProcessor<Message> eventPublisher;
+    private Flux<Message> events;
 
-
-    @PostConstruct
-    private void setup() {
-        intervalFlux = Flux.interval(Duration.ofSeconds(1)).map(it -> getEvent());
+    public ReactiveWebsocketHandler(UnicastProcessor<Message> eventPublisher, Flux<Message> events) {
+        this.eventPublisher = eventPublisher;
+        this.events = events;
     }
-
-    @Bean
-    public PublishSubscribeChannel publishSubscribeChannel() {
-        return new PublishSubscribeChannel();
-    }
-
-    function
 
     @Override
     public Mono<Void> handle(WebSocketSession webSocketSession) {
-//        return webSocketSession
-//                .send(intervalFlux.map(webSocketSession::textMessage))
-//                .and(webSocketSession.receive().map(WebSocketMessage::getPayloadAsText).log());
+        WebSocketMessageSubscriber subscriber = new WebSocketMessageSubscriber(eventPublisher);
+        webSocketSession.receive()
+                .map(WebSocketMessage::getPayloadAsText)
+                .map(this::toMessage)
+                .subscribe(subscriber::onNext, subscriber::onError, subscriber::onComplete);
 
-        log.info("wesocketSessionId : {}", webSocketSession.getId());
-        return webSocketSession
-                .send(Flux.create((Consumer<FluxSink<WebSocketMessage>>) sink -> {
-                    ReactiveMessageHandler reactiveMessageHandler = new ReactiveMessageHandler(webSocketSession, sink);
-
-                    // register the connection to the client
-                    connections.put(webSocketSession.getId(), reactiveMessageHandler);
-                    log.info("### register the connection to the client");
-
-                    // connect to the client
-                    this.publishSubscribeChannel().subscribe(reactiveMessageHandler);
-                    log.info("### connect to the client");
-                })
-                .doFinally((signalType) -> {
-                    log.info("### unsub and remove session in list");
-                    this.publishSubscribeChannel().unsubscribe(connections.get(webSocketSession.getId()));
-                    connections.remove(webSocketSession.getId());
-                }));
+        return webSocketSession.send(events.map((value) -> webSocketSession.textMessage(value.getData())));
     }
 
-    private String getEvent() {
-        JsonNode node = mapper.valueToTree(new Event(messageGenerator.generate(), Instant.now()));
-        return node.toString();
+    private Message toMessage(String strMessage) {
+        try {
+            return objectMapper.readValue(strMessage, Message.class);
+        } catch (JsonProcessingException e) {
+            e.printStackTrace();
+        }
+
+        return null;
     }
 
+    @Slf4j
+    private static class WebSocketMessageSubscriber {
+        private UnicastProcessor<Message> eventPublisher;
+        private Optional<Message> lastReceivedEvent = Optional.empty();
 
-}
+        public WebSocketMessageSubscriber(UnicastProcessor<Message> eventPublisher) {
+            this.eventPublisher = eventPublisher;
+        }
 
-@Component
-class MessageGenerator {
-    private List<String> messages =
-            Arrays.asList("Bonjour", "Hola", "Zdravstvuyte", "Salve", "Guten Tag", "Hello");
+        public void onNext(Message event) {
+            lastReceivedEvent = Optional.of(event);
+            eventPublisher.onNext(event);
+        }
 
-    private final Random random = new Random(messages.size());
+        public void onError(Throwable error) {
+            //TODO log error
+            log.error("ERROR : {}", error.getMessage(), error);
+        }
 
-    public String generate() {
-        return messages.get(random.nextInt(messages.size()));
-    }
-}
+        public void onComplete() {
+            lastReceivedEvent.ifPresent(event -> eventPublisher.onNext(new Message(MessageType.USER_LEFT, "User Left... BYE~!")));
+        }
 
-@Getter
-class Event {
-    private String message;
-    private Instant time;
-
-    Event(String message, Instant time) {
-        this.message = message;
-        this.time = time;
     }
 }
