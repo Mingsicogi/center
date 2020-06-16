@@ -46,14 +46,11 @@ public class ReactiveWebsocketHandler implements WebSocketHandler {
     }
 
     @Bean
-    public IntegrationFlow integrationFlow() {
-        return IntegrationFlows.from("test").channel(this.publishSubscribeChannel()).get();
-    }
-
-    @Bean
     public PublishSubscribeChannel publishSubscribeChannel() {
         return new PublishSubscribeChannel();
     }
+
+    function
 
     @Override
     public Mono<Void> handle(WebSocketSession webSocketSession) {
@@ -62,21 +59,23 @@ public class ReactiveWebsocketHandler implements WebSocketHandler {
 //                .and(webSocketSession.receive().map(WebSocketMessage::getPayloadAsText).log());
 
         log.info("wesocketSessionId : {}", webSocketSession.getId());
-
         return webSocketSession
                 .send(Flux.create((Consumer<FluxSink<WebSocketMessage>>) sink -> {
                     ReactiveMessageHandler reactiveMessageHandler = new ReactiveMessageHandler(webSocketSession, sink);
 
                     // register the connection to the client
                     connections.put(webSocketSession.getId(), reactiveMessageHandler);
+                    log.info("### register the connection to the client");
 
                     // connect to the client
                     this.publishSubscribeChannel().subscribe(reactiveMessageHandler);
+                    log.info("### connect to the client");
                 })
                 .doFinally((signalType) -> {
-                        this.publishSubscribeChannel().unsubscribe(connections.get(webSocketSession.getId()));
-                        connections.remove(webSocketSession.getId());
-                })).and(webSocketSession.receive().map(WebSocketMessage::getPayloadAsText).log());
+                    log.info("### unsub and remove session in list");
+                    this.publishSubscribeChannel().unsubscribe(connections.get(webSocketSession.getId()));
+                    connections.remove(webSocketSession.getId());
+                }));
     }
 
     private String getEvent() {

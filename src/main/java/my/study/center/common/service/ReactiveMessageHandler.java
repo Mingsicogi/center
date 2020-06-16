@@ -14,7 +14,7 @@ public class ReactiveMessageHandler implements MessageHandler {
     private WebSocketSession webSocketSession;
     private FluxSink<WebSocketMessage> sink;
 
-    public ReactiveMessageHandler(WebSocketSession webSocketSession, FluxSink<WebSocketMessage> sink) {
+    ReactiveMessageHandler(WebSocketSession webSocketSession, FluxSink<WebSocketMessage> sink) {
         this.webSocketSession = webSocketSession;
         this.sink = sink;
     }
@@ -22,7 +22,7 @@ public class ReactiveMessageHandler implements MessageHandler {
     @Override
     public void handleMessage(Message<?> message) throws MessagingException {
         String payload = String.valueOf(message.getPayload());
-        log.info("payload : {} ", payload);
+        log.info("### payload : {} ", payload);
         payload += "echo : " + payload;
         WebSocketMessage webSocketMessage = webSocketSession.textMessage(payload);
         sink.next(webSocketMessage);
