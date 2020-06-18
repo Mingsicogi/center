@@ -2,8 +2,8 @@ package my.study.center.config;
 
 
 import lombok.RequiredArgsConstructor;
-import my.study.center.common.service.Message;
-import my.study.center.common.service.ReactiveWebsocketHandler;
+import my.study.center.common.websocket.dto.Message;
+import my.study.center.common.websocket.ReactiveWebsocketHandler;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.reactive.HandlerMapping;

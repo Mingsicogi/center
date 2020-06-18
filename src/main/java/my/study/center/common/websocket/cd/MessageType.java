@@ -1,4 +1,4 @@
-package my.study.center.common.service;
+package my.study.center.common.websocket.cd;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
