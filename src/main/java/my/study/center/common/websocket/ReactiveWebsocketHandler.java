@@ -31,6 +31,7 @@ public class ReactiveWebsocketHandler implements WebSocketHandler {
                 .map(this::toMessage)
                 .subscribe(subscriber::onNext, subscriber::onError, subscriber::onComplete);
 
+
         return webSocketSession.send(events.map((value) -> webSocketSession.textMessage(value.getData())));
     }
 
