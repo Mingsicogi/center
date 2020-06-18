@@ -9,18 +9,24 @@ import reactor.core.publisher.UnicastProcessor;
 
 import java.util.Optional;
 
+/**
+ *
+ *
+ * @author minssogi
+ */
 @Slf4j
-class ReactiveWebsocketSubscriber implements Subscriber<Message> {
+public class ReactiveWebsocketSubscriber implements Subscriber<Message> {
     private UnicastProcessor<Message> eventPublisher;
-    private Optional<Message> lastReceivedEvent = Optional.empty();
+    private Optional<Message> lastReceivedEvent;
 
     ReactiveWebsocketSubscriber(UnicastProcessor<Message> eventPublisher) {
         this.eventPublisher = eventPublisher;
+        lastReceivedEvent = Optional.empty();
     }
 
     @Override
     public void onSubscribe(Subscription subscription) {
-
+        subscription.request(10_000);
     }
 
     @Override
