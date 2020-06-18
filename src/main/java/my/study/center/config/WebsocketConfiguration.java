@@ -2,7 +2,7 @@ package my.study.center.config;
 
 
 import lombok.RequiredArgsConstructor;
-import my.study.center.common.websocket.dto.Message;
+import my.study.center.common.websocket.dto.ChatMessageDTO;
 import my.study.center.common.websocket.ReactiveWebsocketHandler;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -25,13 +25,14 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class WebsocketConfiguration {
 
+
     /**
-     * websocket handler router 설정
-     *
-     * @return HandlerMapping
+     * @param eventPublisher 여러 이벤트를 처리할 수 있는 producer
+     * @param events
+     * @return
      */
     @Bean
-    public HandlerMapping webSocketHandlerMapping(UnicastProcessor<Message> eventPublisher, Flux<Message> events) {
+    public HandlerMapping webSocketHandlerMapping(UnicastProcessor<ChatMessageDTO> eventPublisher, Flux<ChatMessageDTO> events) {
 
         // TODO 해당 부분을 dynamic하게 셋팅할 수 있어야함.
         Map<String, WebSocketHandler> map = new HashMap<>();
@@ -44,12 +45,12 @@ public class WebsocketConfiguration {
     }
 
     @Bean
-    public UnicastProcessor<Message> eventPublisher() {
+    public UnicastProcessor<ChatMessageDTO> eventPublisher() {
         return UnicastProcessor.create();
     }
 
     @Bean
-    public Flux<Message> events(UnicastProcessor<Message> eventPublisher) {
+    public Flux<ChatMessageDTO> events(UnicastProcessor<ChatMessageDTO> eventPublisher) {
         return eventPublisher.replay().autoConnect();
     }
 

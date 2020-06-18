@@ -1,8 +1,8 @@
 package my.study.center.common.websocket;
 
 import lombok.extern.slf4j.Slf4j;
-import my.study.center.common.websocket.cd.MessageType;
-import my.study.center.common.websocket.dto.Message;
+import my.study.center.common.websocket.cd.ChatMessageType;
+import my.study.center.common.websocket.dto.ChatMessageDTO;
 import org.reactivestreams.Subscriber;
 import org.reactivestreams.Subscription;
 import reactor.core.publisher.UnicastProcessor;
@@ -15,11 +15,11 @@ import java.util.Optional;
  * @author minssogi
  */
 @Slf4j
-public class ReactiveWebsocketSubscriber implements Subscriber<Message> {
-    private UnicastProcessor<Message> eventPublisher;
-    private Optional<Message> lastReceivedEvent;
+public class ReactiveWebsocketSubscriber implements Subscriber<ChatMessageDTO> {
+    private UnicastProcessor<ChatMessageDTO> eventPublisher;
+    private Optional<ChatMessageDTO> lastReceivedEvent;
 
-    ReactiveWebsocketSubscriber(UnicastProcessor<Message> eventPublisher) {
+    ReactiveWebsocketSubscriber(UnicastProcessor<ChatMessageDTO> eventPublisher) {
         this.eventPublisher = eventPublisher;
         lastReceivedEvent = Optional.empty();
     }
@@ -30,9 +30,9 @@ public class ReactiveWebsocketSubscriber implements Subscriber<Message> {
     }
 
     @Override
-    public void onNext(Message message) {
-        lastReceivedEvent = Optional.of(message);
-        eventPublisher.onNext(message);
+    public void onNext(ChatMessageDTO chatMessageDTO) {
+        lastReceivedEvent = Optional.of(chatMessageDTO);
+        eventPublisher.onNext(chatMessageDTO);
     }
 
     @Override
@@ -42,6 +42,6 @@ public class ReactiveWebsocketSubscriber implements Subscriber<Message> {
 
     @Override
     public void onComplete() {
-        lastReceivedEvent.ifPresent(event -> eventPublisher.onNext(new Message(MessageType.USER_LEFT, "User Left... BYE~!")));
+        lastReceivedEvent.ifPresent(event -> eventPublisher.onNext(new ChatMessageDTO(ChatMessageType.USER_LEFT, "User Left... BYE~!")));
     }
 }
