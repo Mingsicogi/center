@@ -9,11 +9,13 @@ import java.util.concurrent.atomic.AtomicLong;
 @Getter
 @Setter
 public class ChatUser {
+    private String sessionId;
     private AtomicLong messageCount = new AtomicLong(0);
     private LocalDateTime joinedYmdt;
     private String nickname;
 
-    public ChatUser() {
+    public ChatUser(String sessionId) {
+        this.sessionId = sessionId;
         this.joinedYmdt = LocalDateTime.now();
     }
 }
