@@ -2,8 +2,8 @@ package my.study.center.config;
 
 
 import lombok.RequiredArgsConstructor;
-import my.study.center.common.websocket.dto.ChatMessageDTO;
-import my.study.center.common.websocket.ReactiveWebsocketHandler;
+import my.study.center.common.websocket.dto.ChatMessage;
+import my.study.center.common.websocket.ReactiveWebsocketConnectionHandler;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.reactive.HandlerMapping;
@@ -32,26 +32,27 @@ public class WebsocketConfiguration {
      * @return
      */
     @Bean
-    public HandlerMapping webSocketHandlerMapping(UnicastProcessor<ChatMessageDTO> eventPublisher, Flux<ChatMessageDTO> events) {
+    public HandlerMapping webSocketHandlerMapping(UnicastProcessor<ChatMessage> eventPublisher, Flux<ChatMessage> events) {
 
         // TODO 해당 부분을 dynamic하게 셋팅할 수 있어야함.
         Map<String, WebSocketHandler> map = new HashMap<>();
-        map.put("/event-emitter", new ReactiveWebsocketHandler(eventPublisher, events));
+        map.put("/chat/room", new ReactiveWebsocketConnectionHandler(eventPublisher, events));
 
         SimpleUrlHandlerMapping handlerMapping = new SimpleUrlHandlerMapping();
         handlerMapping.setOrder(1);
         handlerMapping.setUrlMap(map);
+
         return handlerMapping;
     }
 
     @Bean
-    public UnicastProcessor<ChatMessageDTO> eventPublisher() {
+    public UnicastProcessor<ChatMessage> eventPublisher() {
         return UnicastProcessor.create();
     }
 
     @Bean
-    public Flux<ChatMessageDTO> events(UnicastProcessor<ChatMessageDTO> eventPublisher) {
-        return eventPublisher.replay().autoConnect();
+    public Flux<ChatMessage> events(UnicastProcessor<ChatMessage> eventPublisher) {
+        return eventPublisher.replay(0).autoConnect(); // 새로 접속한 유저에게 이전 메세지를 얼만큼 보장할 것인지에 대한 설정.
     }
 
     /**

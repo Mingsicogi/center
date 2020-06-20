@@ -17,11 +17,11 @@ import static my.study.center.common.utils.CommonUtils.stringToObject;
 @Getter
 @AllArgsConstructor
 @NoArgsConstructor
-public class ChatMessageDTO {
+public class ChatMessage {
     private ChatMessageType type;
     private String data;
 
-    public static ChatMessageDTO toMessage(String strMessage) {
-        return stringToObject(strMessage, ChatMessageDTO.class).orElseThrow(RuntimeException::new);
+    public static ChatMessage toMessage(String strMessage) {
+        return stringToObject(strMessage, ChatMessage.class).orElseThrow(RuntimeException::new);
     }
 }
