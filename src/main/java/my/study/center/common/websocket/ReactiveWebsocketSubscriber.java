@@ -8,7 +8,11 @@ import org.reactivestreams.Subscriber;
 import org.reactivestreams.Subscription;
 import reactor.core.publisher.UnicastProcessor;
 
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.Optional;
+import java.util.UUID;
 
 import static my.study.center.common.websocket.ReactiveWebsocketConnectionHandler.userSessionManager;
 
@@ -53,8 +57,10 @@ public class ReactiveWebsocketSubscriber implements Subscriber<ChatMessage> {
 
     @Override
     public void onComplete() {
-        lastReceivedEvent.ifPresent(event -> eventPublisher.onNext(new ChatMessage(ChatMessageType.USER_LEFT, this.mySessionInfo.getSessionId() + " 님이 퇴장했습니다.")));
-        userSessionManager.remove(this.mySessionInfo.getSessionId());
+        lastReceivedEvent.ifPresent(event -> eventPublisher.onNext(
+                new ChatMessage(UUID.randomUUID().toString(), ChatMessageType.USER_LEFT, this.mySessionInfo.getUid() + " 님이 퇴장했습니다.",
+                        Instant.now().toEpochMilli(), new ChatUser(this.mySessionInfo.getUid()))));
+        userSessionManager.remove(this.mySessionInfo.getUid());
     }
 
     public ChatUser getMySessionInfo() {

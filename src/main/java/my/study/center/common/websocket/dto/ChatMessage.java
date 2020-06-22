@@ -18,8 +18,11 @@ import static my.study.center.common.utils.CommonUtils.stringToObject;
 @AllArgsConstructor
 @NoArgsConstructor
 public class ChatMessage {
+    private String id;
     private ChatMessageType type;
-    private String data;
+    private String text;
+    private long createdAt;
+    private ChatUser user;
 
     public static ChatMessage toMessage(String strMessage) {
         return stringToObject(strMessage, ChatMessage.class).orElseThrow(RuntimeException::new);

@@ -1,6 +1,7 @@
 package my.study.center.common.utils;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.util.Optional;
@@ -12,7 +13,7 @@ import java.util.Optional;
  */
 public class CommonUtils {
 
-    private static ObjectMapper objectMapper = new ObjectMapper();
+    private static ObjectMapper objectMapper = new ObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
 
     /**
      * convert string to class
@@ -29,5 +30,16 @@ public class CommonUtils {
         }
 
         return Optional.empty();
+    }
+
+    public static String objectToString(Object obj) {
+
+        try {
+            return objectMapper.writeValueAsString(obj);
+        } catch (JsonProcessingException e) {
+            e.printStackTrace();
+        }
+
+        return "";
     }
 }

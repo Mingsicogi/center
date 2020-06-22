@@ -11,8 +11,14 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.core.publisher.UnicastProcessor;
 
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+
+import static my.study.center.common.utils.CommonUtils.objectToString;
 
 /**
  * 최초 커넥션 요청을 처리하는 핸들러
@@ -38,7 +44,9 @@ public class ReactiveWebsocketConnectionHandler implements WebSocketHandler {
         // 세션관리를 위해 현재 연결을 요청한 세션이 없다면 추가함.
         ChatUser chatUser = userSessionManager.get(webSocketSession.getId());
         if(chatUser == null) {
-            ChatMessage newMemberJoinMessage = new ChatMessage(ChatMessageType.CHAT_MESSAGE, webSocketSession.getId() + " 님이 접속하셨습니다.");
+            ChatMessage newMemberJoinMessage = new ChatMessage(
+                    UUID.randomUUID().toString(), ChatMessageType.CHAT_MESSAGE, webSocketSession.getId() + " 님이 접속하셨습니다.",
+                    Instant.now().toEpochMilli(), new ChatUser(webSocketSession.getId()));
             subscriber.onNext(newMemberJoinMessage);
 
             // 현재 접속한 세션을 저장함
@@ -51,6 +59,6 @@ public class ReactiveWebsocketConnectionHandler implements WebSocketHandler {
                 .subscribe(subscriber::onNext, subscriber::onError, subscriber::onComplete)
         ;
 
-        return webSocketSession.send(events.map((value) -> webSocketSession.textMessage(value.getData())));
+        return webSocketSession.send(events.map((value) -> webSocketSession.textMessage(objectToString(value))));
     }
 }
