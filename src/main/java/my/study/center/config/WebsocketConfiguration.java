@@ -2,8 +2,9 @@ package my.study.center.config;
 
 
 import lombok.RequiredArgsConstructor;
-import my.study.center.common.websocket.dto.ChatMessage;
+import my.study.center.common.app.repository.ChatMessageHistRepository;
 import my.study.center.common.websocket.ReactiveWebsocketConnectionHandler;
+import my.study.center.common.websocket.dto.ChatMessage;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.reactive.HandlerMapping;
@@ -25,6 +26,8 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class WebsocketConfiguration {
 
+    private final ChatMessageHistRepository chatMessageHistRepository;
+
 
     /**
      * @param eventPublisher 여러 이벤트를 처리할 수 있는 producer
@@ -36,7 +39,7 @@ public class WebsocketConfiguration {
 
         // TODO 해당 부분을 dynamic하게 셋팅할 수 있어야함.
         Map<String, WebSocketHandler> map = new HashMap<>();
-        map.put("/chat/room", new ReactiveWebsocketConnectionHandler(eventPublisher, events));
+        map.put("/chat/room", new ReactiveWebsocketConnectionHandler(eventPublisher, events, chatMessageHistRepository));
 
         SimpleUrlHandlerMapping handlerMapping = new SimpleUrlHandlerMapping();
         handlerMapping.setOrder(1);

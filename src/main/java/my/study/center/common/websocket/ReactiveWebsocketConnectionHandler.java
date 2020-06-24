@@ -1,6 +1,8 @@
 package my.study.center.common.websocket;
 
 import lombok.extern.slf4j.Slf4j;
+import my.study.center.common.app.documents.ChatMessageHist;
+import my.study.center.common.app.repository.ChatMessageHistRepository;
 import my.study.center.common.websocket.cd.ChatMessageType;
 import my.study.center.common.websocket.dto.ChatMessage;
 import my.study.center.common.websocket.dto.ChatUser;
@@ -29,22 +31,26 @@ public class ReactiveWebsocketConnectionHandler implements WebSocketHandler {
     private UnicastProcessor<ChatMessage> eventPublisher;
     private Flux<ChatMessage> events;
     public final static Map<String, ChatUser> userSessionManager = new ConcurrentHashMap<>();
+    private ChatMessageHistRepository chatMessageHistRepository;
 
-    public ReactiveWebsocketConnectionHandler(UnicastProcessor<ChatMessage> eventPublisher, Flux<ChatMessage> events) {
+    public ReactiveWebsocketConnectionHandler(UnicastProcessor<ChatMessage> eventPublisher, Flux<ChatMessage> events, ChatMessageHistRepository chatMessageHistRepository) {
         this.eventPublisher = eventPublisher;
         this.events = events;
+        this.chatMessageHistRepository = chatMessageHistRepository;
     }
 
     @Override
     public Mono<Void> handle(WebSocketSession webSocketSession) {
-        ReactiveWebsocketSubscriber subscriber = new ReactiveWebsocketSubscriber(eventPublisher, new ChatUser(webSocketSession.getId()));
+        ReactiveWebsocketSubscriber subscriber = new ReactiveWebsocketSubscriber(eventPublisher, new ChatUser(webSocketSession.getId()), chatMessageHistRepository);
 
         // 세션관리를 위해 현재 연결을 요청한 세션이 없다면 추가함.
         ChatUser chatUser = userSessionManager.get(webSocketSession.getId());
-        if(chatUser == null) {
+        if (chatUser == null) {
             ChatMessage newMemberJoinMessage = new ChatMessage(
                     UUID.randomUUID().toString(), ChatMessageType.CHAT_MESSAGE, webSocketSession.getId() + " 님이 접속하셨습니다.",
                     Instant.now().toEpochMilli(), new ChatUser(webSocketSession.getId()));
+
+            chatMessageHistRepository.save(new ChatMessageHist(newMemberJoinMessage));
             subscriber.onNext(newMemberJoinMessage);
 
             // 현재 접속한 세션을 저장함

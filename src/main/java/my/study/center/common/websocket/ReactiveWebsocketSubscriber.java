@@ -1,16 +1,18 @@
 package my.study.center.common.websocket;
 
 import lombok.extern.slf4j.Slf4j;
+import my.study.center.common.app.documents.ChatMessageHist;
+import my.study.center.common.app.repository.ChatMessageHistRepository;
 import my.study.center.common.websocket.cd.ChatMessageType;
 import my.study.center.common.websocket.dto.ChatMessage;
 import my.study.center.common.websocket.dto.ChatUser;
 import org.reactivestreams.Subscriber;
 import org.reactivestreams.Subscription;
+import org.springframework.web.context.support.GenericWebApplicationContext;
+import reactor.core.publisher.Mono;
 import reactor.core.publisher.UnicastProcessor;
 
 import java.time.Instant;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -25,12 +27,14 @@ import static my.study.center.common.websocket.ReactiveWebsocketConnectionHandle
 public class ReactiveWebsocketSubscriber implements Subscriber<ChatMessage> {
     private UnicastProcessor<ChatMessage> eventPublisher;
     private Optional<ChatMessage> lastReceivedEvent;
-    private ChatUser mySessionInfo; // 현재 세션 관리를 위한 객
+    private ChatUser mySessionInfo; // 현재 세션 관리를 위한 객체
+    private ChatMessageHistRepository chatMessageHistRepository;
 
-    ReactiveWebsocketSubscriber(UnicastProcessor<ChatMessage> eventPublisher, ChatUser chatUser) {
+    ReactiveWebsocketSubscriber(UnicastProcessor<ChatMessage> eventPublisher, ChatUser chatUser, ChatMessageHistRepository chatMessageHistRepository) {
         this.eventPublisher = eventPublisher;
         this.mySessionInfo = chatUser;
         lastReceivedEvent = Optional.empty();
+        this.chatMessageHistRepository = chatMessageHistRepository;
     }
 
     @Override
@@ -47,6 +51,8 @@ public class ReactiveWebsocketSubscriber implements Subscriber<ChatMessage> {
     public void onNext(ChatMessage chatMessage) {
         mySessionInfo.getMessageCount().incrementAndGet(); // 현재 세션에서 보낸 메세지 총 갯수를 관리함.
         lastReceivedEvent = Optional.of(chatMessage);
+
+        chatMessageHistRepository.save(new ChatMessageHist(chatMessage));
         eventPublisher.onNext(chatMessage);
     }
 
