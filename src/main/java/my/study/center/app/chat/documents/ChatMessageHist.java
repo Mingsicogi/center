@@ -7,6 +7,7 @@ import my.study.center.common.websocket.cd.ChatMessageType;
 import my.study.center.common.websocket.dto.ChatMessage;
 import my.study.center.common.websocket.dto.ChatUser;
 import org.springframework.beans.BeanUtils;
+import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 @Getter
@@ -14,7 +15,8 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @Document("chatMessageHist")
 @NoArgsConstructor
 public class ChatMessageHist {
-    private String id;
+    @Id
+    private String histId;
     private ChatMessageType type;
     private String text;
     private long createdAt;

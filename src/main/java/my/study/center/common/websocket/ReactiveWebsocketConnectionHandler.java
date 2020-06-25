@@ -17,6 +17,7 @@ import java.time.Instant;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static my.study.center.common.utils.CommonUtils.objectToString;
 
@@ -45,13 +46,13 @@ public class ReactiveWebsocketConnectionHandler implements WebSocketHandler {
 
         // 세션관리를 위해 현재 연결을 요청한 세션이 없다면 추가함.
         ChatUser chatUser = userSessionManager.get(webSocketSession.getId());
+        AtomicReference<ChatMessage> receiveMessage = new AtomicReference<>(new ChatMessage());
         if (chatUser == null) {
             ChatMessage newMemberJoinMessage = new ChatMessage(
                     UUID.randomUUID().toString(), ChatMessageType.CHAT_MESSAGE, webSocketSession.getId() + " 님이 접속하셨습니다.",
                     Instant.now().toEpochMilli(), new ChatUser(webSocketSession.getId()));
 
-            chatMessageHistRepository.save(new ChatMessageHist(newMemberJoinMessage));
-            subscriber.onNext(newMemberJoinMessage);
+            receiveMessage.set(newMemberJoinMessage);
 
             // 현재 접속한 세션을 저장함
             userSessionManager.put(webSocketSession.getId(), subscriber.getMySessionInfo());
@@ -63,6 +64,8 @@ public class ReactiveWebsocketConnectionHandler implements WebSocketHandler {
                 .subscribe(subscriber::onNext, subscriber::onError, subscriber::onComplete)
         ;
 
-        return webSocketSession.send(events.map((value) -> webSocketSession.textMessage(objectToString(value))));
+        return chatMessageHistRepository.save(new ChatMessageHist(receiveMessage.get()))
+                .flatMap(chatMessageHist ->
+                        webSocketSession.send(events.map(value -> webSocketSession.textMessage(objectToString(value)))));
     }
 }

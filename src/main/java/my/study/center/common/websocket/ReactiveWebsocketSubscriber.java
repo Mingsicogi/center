@@ -49,9 +49,8 @@ public class ReactiveWebsocketSubscriber implements Subscriber<ChatMessage> {
     public void onNext(ChatMessage chatMessage) {
         mySessionInfo.getMessageCount().incrementAndGet(); // 현재 세션에서 보낸 메세지 총 갯수를 관리함.
         lastReceivedEvent = Optional.of(chatMessage);
-
-        chatMessageHistRepository.save(new ChatMessageHist(chatMessage));
-        eventPublisher.onNext(chatMessage);
+//        eventPublisher.onNext(chatMessage);
+        chatMessageHistRepository.save(new ChatMessageHist(chatMessage)).subscribe(chatMessageHist -> eventPublisher.onNext(chatMessage));
     }
 
     @Override
@@ -61,9 +60,19 @@ public class ReactiveWebsocketSubscriber implements Subscriber<ChatMessage> {
 
     @Override
     public void onComplete() {
-        lastReceivedEvent.ifPresent(event -> eventPublisher.onNext(
-                new ChatMessage(UUID.randomUUID().toString(), ChatMessageType.USER_LEFT, this.mySessionInfo.getUid() + " 님이 퇴장했습니다.",
-                        Instant.now().toEpochMilli(), new ChatUser(this.mySessionInfo.getUid()))));
+//        lastReceivedEvent.ifPresent(event -> eventPublisher.onNext(
+//                new ChatMessage(UUID.randomUUID().toString(), ChatMessageType.USER_LEFT, this.mySessionInfo.getUid() + " 님이 퇴장했습니다.",
+//                        Instant.now().toEpochMilli(), new ChatUser(this.mySessionInfo.getUid()))));
+
+        ChatMessage leaveMessage = new ChatMessage(UUID.randomUUID().toString(), ChatMessageType.USER_LEFT,
+                this.mySessionInfo.getUid() + " 님이 퇴장했습니다.",
+                Instant.now().toEpochMilli(), new ChatUser(this.mySessionInfo.getUid())
+        );
+
+        chatMessageHistRepository.save(new ChatMessageHist(leaveMessage)).subscribe(chatMessageHist -> {
+            lastReceivedEvent.ifPresent(lastMessage -> eventPublisher.onNext(leaveMessage));
+        });
+
         userSessionManager.remove(this.mySessionInfo.getUid());
     }
 
