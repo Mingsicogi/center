@@ -1,4 +1,4 @@
-package my.study.center.common.app.dto;
+package my.study.center.app.chat.dto;
 
 import lombok.Getter;
 import lombok.NoArgsConstructor;

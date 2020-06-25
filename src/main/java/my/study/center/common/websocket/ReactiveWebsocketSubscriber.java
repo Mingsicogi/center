@@ -1,15 +1,13 @@
 package my.study.center.common.websocket;
 
 import lombok.extern.slf4j.Slf4j;
-import my.study.center.common.app.documents.ChatMessageHist;
-import my.study.center.common.app.repository.ChatMessageHistRepository;
+import my.study.center.app.chat.documents.ChatMessageHist;
+import my.study.center.app.chat.repository.ChatMessageHistRepository;
 import my.study.center.common.websocket.cd.ChatMessageType;
 import my.study.center.common.websocket.dto.ChatMessage;
 import my.study.center.common.websocket.dto.ChatUser;
 import org.reactivestreams.Subscriber;
 import org.reactivestreams.Subscription;
-import org.springframework.web.context.support.GenericWebApplicationContext;
-import reactor.core.publisher.Mono;
 import reactor.core.publisher.UnicastProcessor;
 
 import java.time.Instant;

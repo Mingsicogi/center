@@ -2,7 +2,7 @@ package my.study.center.config;
 
 
 import lombok.RequiredArgsConstructor;
-import my.study.center.common.app.repository.ChatMessageHistRepository;
+import my.study.center.app.chat.repository.ChatMessageHistRepository;
 import my.study.center.common.websocket.ReactiveWebsocketConnectionHandler;
 import my.study.center.common.websocket.dto.ChatMessage;
 import org.springframework.context.annotation.Bean;

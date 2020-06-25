@@ -1,6 +1,8 @@
-Reactive Websocket Chatting Server
+# Reactive Websocket Chatting Server
 
-Technical Spec
+## Technical Spec
  1. Springboot 2.3.0
- 2. Webflux
- 3. Reactive MongoDB
+    - Spring Integration
+    - Webflux
+    - Reactive MongoDB
+    

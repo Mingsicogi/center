@@ -1,4 +1,4 @@
-package my.study.center.common.app.documents;
+package my.study.center.app.chat.documents;
 
 import lombok.Getter;
 import lombok.NoArgsConstructor;
