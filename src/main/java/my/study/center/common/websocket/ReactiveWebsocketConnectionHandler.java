@@ -64,8 +64,10 @@ public class ReactiveWebsocketConnectionHandler implements WebSocketHandler {
                 .subscribe(subscriber::onNext, subscriber::onError, subscriber::onComplete)
         ;
 
-        return chatMessageHistRepository.save(new ChatMessageHist(receiveMessage.get()))
-                .flatMap(chatMessageHist ->
-                        webSocketSession.send(events.map(value -> webSocketSession.textMessage(objectToString(value)))));
+        chatMessageHistRepository.save(new ChatMessageHist(receiveMessage.get())).subscribe(chatMessageHist -> {
+            subscriber.onNext(receiveMessage.get());
+        });
+
+        return webSocketSession.send(events.map(value -> webSocketSession.textMessage(objectToString(value))));
     }
 }

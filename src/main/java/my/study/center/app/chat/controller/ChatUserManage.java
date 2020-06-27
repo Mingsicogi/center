@@ -2,6 +2,7 @@ package my.study.center.app.chat.controller;
 
 import lombok.RequiredArgsConstructor;
 import my.study.center.app.chat.dto.ChatUserManageDTO;
+import my.study.center.app.chat.repository.ChatUserRepository;
 import my.study.center.common.websocket.dto.ChatUser;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -20,6 +21,8 @@ import static my.study.center.common.websocket.ReactiveWebsocketConnectionHandle
 @RequiredArgsConstructor
 public class ChatUserManage {
 
+    private final ChatUserRepository chatUserRepository;
+
     /**
      * 파라미터로 전달한 세션이 보낸 메세지 갯수
      *
@@ -28,9 +31,7 @@ public class ChatUserManage {
      */
     @PostMapping(value = "/message/count", consumes = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<Flux<Long>> getMessageCount(@RequestBody ChatUserManageDTO.TotalMessageCountReq param) {
-
         ChatUser chatUser = userSessionManager.get(param.getSessionId());
-
         return ResponseEntity.ok(Flux.just(chatUser.getMessageCount().get()));
     }
 
