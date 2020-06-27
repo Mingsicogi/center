@@ -1,7 +1,7 @@
 package my.study.center.app.chat.controller;
 
 import lombok.RequiredArgsConstructor;
-import my.study.center.app.chat.dto.ChatUserDTO;
+import my.study.center.app.chat.dto.ChatUserManageDTO;
 import my.study.center.common.websocket.dto.ChatUser;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -27,7 +27,7 @@ public class ChatUserManage {
      * @return Long
      */
     @PostMapping(value = "/message/count", consumes = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<Flux<Long>> getMessageCount(@RequestBody ChatUserDTO.InfoReq param) {
+    public ResponseEntity<Flux<Long>> getMessageCount(@RequestBody ChatUserManageDTO.TotalMessageCountReq param) {
 
         ChatUser chatUser = userSessionManager.get(param.getSessionId());
 
