@@ -10,6 +10,11 @@ import org.springframework.beans.BeanUtils;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 
+/**
+ * 메세지 이력관리를 위한 document
+ *
+ * @author 전민석
+ */
 @Getter
 @Setter
 @Document("chatMessageHist")
