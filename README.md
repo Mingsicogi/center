@@ -6,5 +6,7 @@
     - Webflux
     - Reactive MongoDB
     - Redis
+    - Netty
+    - Spring Actuator
  
  2. 
