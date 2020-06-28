@@ -2,10 +2,11 @@ package my.study.center.common.websocket;
 
 import lombok.extern.slf4j.Slf4j;
 import my.study.center.app.chat.documents.ChatMessageHist;
+import my.study.center.app.chat.redisEntity.User;
 import my.study.center.app.chat.repository.ChatMessageHistRepository;
+import my.study.center.app.chat.repository.ChatUserRepository;
 import my.study.center.common.websocket.cd.ChatMessageType;
 import my.study.center.common.websocket.dto.ChatMessage;
-import my.study.center.common.websocket.dto.ChatUser;
 import org.reactivestreams.Subscriber;
 import org.reactivestreams.Subscription;
 import reactor.core.publisher.UnicastProcessor;
@@ -14,7 +15,6 @@ import java.time.Instant;
 import java.util.Optional;
 import java.util.UUID;
 
-import static my.study.center.common.websocket.ReactiveWebsocketConnectionHandler.userSessionManager;
 
 /**
  * 메세지를 전달 받아 처리하는 subscriber
@@ -25,19 +25,22 @@ import static my.study.center.common.websocket.ReactiveWebsocketConnectionHandle
 public class ReactiveWebsocketSubscriber implements Subscriber<ChatMessage> {
     private UnicastProcessor<ChatMessage> eventPublisher;
     private Optional<ChatMessage> lastReceivedEvent;
-    private ChatUser mySessionInfo; // 현재 세션 관리를 위한 객체
+    private User user; // 현재 세션 관리를 위한 객체
     private ChatMessageHistRepository chatMessageHistRepository;
+    private ChatUserRepository chatUserRepository;
 
-    ReactiveWebsocketSubscriber(UnicastProcessor<ChatMessage> eventPublisher, ChatUser chatUser, ChatMessageHistRepository chatMessageHistRepository) {
+    ReactiveWebsocketSubscriber(UnicastProcessor<ChatMessage> eventPublisher,
+                                ChatMessageHistRepository chatMessageHistRepository,
+                                ChatUserRepository chatUserRepository) {
         this.eventPublisher = eventPublisher;
-        this.mySessionInfo = chatUser;
+        this.chatUserRepository = chatUserRepository;
         lastReceivedEvent = Optional.empty();
         this.chatMessageHistRepository = chatMessageHistRepository;
     }
 
     @Override
     public void onSubscribe(Subscription subscription) {
-        subscription.request(10_000);
+        subscription.request(10_000); // request 요청을 핸들링 할 수 있는 용량. 만개 이하를 처리하고,
     }
 
     /**
@@ -47,9 +50,14 @@ public class ReactiveWebsocketSubscriber implements Subscriber<ChatMessage> {
      */
     @Override
     public void onNext(ChatMessage chatMessage) {
-        mySessionInfo.getMessageCount().incrementAndGet(); // 현재 세션에서 보낸 메세지 총 갯수를 관리함.
+
+        // 현재 세션에서 보낸 메세지 총 갯수를 관리함.
+        chatUserRepository.findById(chatMessage.getUser().getUid()).ifPresentOrElse(savedSessionUser -> {
+            savedSessionUser.setMessageCount(savedSessionUser.getMessageCount() + 1);
+            chatUserRepository.save(savedSessionUser);
+        }, () -> chatUserRepository.save(chatMessage.getUser()));
+
         lastReceivedEvent = Optional.of(chatMessage);
-//        eventPublisher.onNext(chatMessage);
         chatMessageHistRepository.save(new ChatMessageHist(chatMessage)).subscribe(chatMessageHist -> eventPublisher.onNext(chatMessage));
     }
 
@@ -60,23 +68,15 @@ public class ReactiveWebsocketSubscriber implements Subscriber<ChatMessage> {
 
     @Override
     public void onComplete() {
-//        lastReceivedEvent.ifPresent(event -> eventPublisher.onNext(
-//                new ChatMessage(UUID.randomUUID().toString(), ChatMessageType.USER_LEFT, this.mySessionInfo.getUid() + " 님이 퇴장했습니다.",
-//                        Instant.now().toEpochMilli(), new ChatUser(this.mySessionInfo.getUid()))));
+        lastReceivedEvent.ifPresent(lastMessage -> {
+            ChatMessage leaveMessage = new ChatMessage(UUID.randomUUID().toString(), ChatMessageType.USER_LEFT,
+                    lastMessage.getUser().getUid() + " 님이 퇴장했습니다.", Instant.now().toEpochMilli(),
+                    new User(lastMessage.getUser().getUid())
+            );
 
-        ChatMessage leaveMessage = new ChatMessage(UUID.randomUUID().toString(), ChatMessageType.USER_LEFT,
-                this.mySessionInfo.getUid() + " 님이 퇴장했습니다.",
-                Instant.now().toEpochMilli(), new ChatUser(this.mySessionInfo.getUid())
-        );
-
-        chatMessageHistRepository.save(new ChatMessageHist(leaveMessage)).subscribe(chatMessageHist -> {
-            lastReceivedEvent.ifPresent(lastMessage -> eventPublisher.onNext(leaveMessage));
+            chatMessageHistRepository.save(new ChatMessageHist(leaveMessage))
+                    .subscribe(chatMessageHist -> eventPublisher.onNext(leaveMessage)); // broadcasting other user
+            chatUserRepository.deleteById(lastMessage.getUser().getUid()); // session remove
         });
-
-        userSessionManager.remove(this.mySessionInfo.getUid());
-    }
-
-    public ChatUser getMySessionInfo() {
-        return this.mySessionInfo;
     }
 }

@@ -1,9 +1,9 @@
 package my.study.center;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import my.study.center.app.chat.redisEntity.User;
 import my.study.center.common.websocket.cd.ChatMessageType;
 import my.study.center.common.websocket.dto.ChatMessage;
-import my.study.center.common.websocket.dto.ChatUser;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 
@@ -17,7 +17,7 @@ class CenterApplicationTests {
 
     @Test
     void contextLoads() throws Exception {
-        ChatUser user = new ChatUser("123123");
+        User user = new User("123123");
         user.setFirstName("Minseok");
         user.setLastName("Jeon");
         user.setNickname("minssogi");
